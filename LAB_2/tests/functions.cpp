@@ -1,11 +1,20 @@
 #include "pch.h"  
 #include "functions.h"
+#include <sstream>
+#include <string>
 
 int* numbers = nullptr;
 int size = 0;
 int minValue = 0;
 int maxValue = 0;
 double averageValue = 0.0;
+
+bool isStrictInteger(const std::string& str) {
+    std::istringstream iss(str);
+    int x;
+    char c;
+    return (iss >> x) && !(iss >> c);
+}
 
 DWORD WINAPI min_max(LPVOID lpParameters) {
     minValue = numbers[0];

@@ -1,21 +1,6 @@
-﻿// лабораторная работа 2.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
-//Поток main должен выполнить следующие действия:
-//1. Создать массив целых чисел, размерность и элементы которого вводятся с консоли.
-//2. Создать потоки min_max и average.
-//3. Дождаться завершения потоков min_max и average.
-//4. Заменить максимальный и минимальный элементы массива на среднее значение элементов
-//массива.Вывести полученные результаты на консоль.
-//5. Завершить работу.
-//Поток min_max должен выполнить следующие действия :
-//1. Найти минимальный и максимальный элементы массива и вывести их на консоль.После
-//каждого сравнения элементов «спать» 7 миллисекунд.
-//2. Завершить свою работу.
-//Поток average должен выполнить следующие действия :
-//1. Найти среднее арифметическое значение элементов массива и вывести его на консоль.
-//После каждой операции суммирования элементов «спать» 12 миллисекунд.
-//2. Завершить свою работу.
-
-#include <iostream>
+﻿#include <iostream>
+#include <string>
+#include <sstream>
 #include <windows.h>
 
 int* numbers;
@@ -46,7 +31,6 @@ DWORD WINAPI min_max(LPVOID lpParameters) {
     return 0;
 }
 
-
 DWORD WINAPI average(LPVOID lpParameters) {
     double sum = 0.0;
 
@@ -62,17 +46,41 @@ DWORD WINAPI average(LPVOID lpParameters) {
     return 0;
 }
 
+bool isInteger(const std::string& str) {
+    std::istringstream iss(str);
+    int x;
+    char c;
+    return (iss >> x) && !(iss >> c); 
+}
 
 int main()
 {
     //setlocale(LC_ALL, "rus");
+    std::string input;
 
     std::cout << "Enter size of array: ";
-    std::cin >> size;
+    std::cin >> input;
+
+    if (!isInteger(input)) {
+        std::cerr << "Size of array must be a number." << std::endl;
+        return 1;
+    } 
+
+    size = stoi(input);
+
     numbers = new int[size];
     std::cout << "Enter the array elements: ";
     for (int i = 0; i < size; i++) {
-        std::cin >> numbers[i];
+        while (true) {
+            std::cin >> input;
+            if (!isInteger(input)) {
+                std::cout << "Invalid integer: " << std::endl;
+            }
+            else {
+                numbers[i] = stoi(input);
+                break;
+            }
+        }
     }
 
     HANDLE hMin_max = CreateThread(NULL, 0, min_max, NULL, 0, NULL);
