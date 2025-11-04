@@ -1,0 +1,71 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\my projects\\\u041E\u0421\\LAB_4\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{CB61DC4C-5C88-4491-AA1A-624C6A5745A3}|tests\\tests.vcxproj|C:\\my projects\\\u041E\u0421\\LAB_4\\tests\\test.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{CB61DC4C-5C88-4491-AA1A-624C6A5745A3}|tests\\tests.vcxproj|solutionrelative:tests\\test.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE986AB0-4602-4FFF-AA8C-7E782402C2C8}|LAB_4\\LAB_4.vcxproj|C:\\my projects\\\u041E\u0421\\LAB_4\\LAB_4\\LAB_4.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{EE986AB0-4602-4FFF-AA8C-7E782402C2C8}|LAB_4\\LAB_4.vcxproj|solutionrelative:LAB_4\\LAB_4.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{84CE1B5E-265C-4FF9-8FDA-7DB676B40F04}|Sender\\Sender.vcxproj|C:\\my projects\\\u041E\u0421\\LAB_4\\Sender\\Sender.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{84CE1B5E-265C-4FF9-8FDA-7DB676B40F04}|Sender\\Sender.vcxproj|solutionrelative:Sender\\Sender.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "test.cpp",
+              "DocumentMoniker": "C:\\my projects\\\u041E\u0421\\LAB_4\\tests\\test.cpp",
+              "RelativeDocumentMoniker": "tests\\test.cpp",
+              "ToolTip": "C:\\my projects\\\u041E\u0421\\LAB_4\\tests\\test.cpp*",
+              "RelativeToolTip": "tests\\test.cpp*",
+              "ViewState": "AgIAAD4AAAAAAAAAAAAAwE8AAAA9AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-11-02T18:35:55.583Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Sender.cpp",
+              "DocumentMoniker": "C:\\my projects\\\u041E\u0421\\LAB_4\\Sender\\Sender.cpp",
+              "RelativeDocumentMoniker": "Sender\\Sender.cpp",
+              "ToolTip": "C:\\my projects\\\u041E\u0421\\LAB_4\\Sender\\Sender.cpp",
+              "RelativeToolTip": "Sender\\Sender.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-11-02T14:05:51.605Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "LAB_4.cpp",
+              "DocumentMoniker": "C:\\my projects\\\u041E\u0421\\LAB_4\\LAB_4\\LAB_4.cpp",
+              "RelativeDocumentMoniker": "LAB_4\\LAB_4.cpp",
+              "ToolTip": "C:\\my projects\\\u041E\u0421\\LAB_4\\LAB_4\\LAB_4.cpp",
+              "RelativeToolTip": "LAB_4\\LAB_4.cpp",
+              "ViewState": "AgIAACwAAAAAAAAAAAAIwDgAAABFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-11-02T13:49:08.507Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
