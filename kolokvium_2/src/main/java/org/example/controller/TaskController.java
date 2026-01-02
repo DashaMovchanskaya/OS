@@ -2,7 +2,6 @@ package org.example.controller;
 
 import org.example.model.Task;
 import org.example.service.TaskService;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,38 +12,55 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/tasks")
+@RequestMapping("/tasks")
 @CrossOrigin(origins = "*")
 public class TaskController {
 
     @Autowired
     private TaskService taskService;
 
+    // Домашняя страница API
     @GetMapping("/")
-    public ResponseEntity<Map<String, String>> home() {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "To-Do List API");
+    public ResponseEntity<Map<String, Object>> home() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "To-Do List API with SQLite");
         response.put("version", "1.0");
-        response.put("endpoints", "GET /api/tasks, POST /api/tasks, etc.");
+        response.put("database", "SQLite (todo.db file)");
+        response.put("totalTasks", taskService.getTotalTaskCount());
         return ResponseEntity.ok(response);
     }
 
-    @PostConstruct
-    public void init() {
-        taskService.initializeSampleData();
-        System.out.println("Sample tasks initialized");
+    // Статистика
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalTasks", taskService.getTotalTaskCount());
+        stats.put("todoCount", taskService.getTasksByStatus("todo").size());
+        stats.put("inProgressCount", taskService.getTasksByStatus("in_progress").size());
+        stats.put("doneCount", taskService.getTasksByStatus("done").size());
+        return ResponseEntity.ok(stats);
     }
 
+    // Поиск по заголовку
+    @GetMapping("/search")
+    public ResponseEntity<List<Task>> searchTasks(@RequestParam String q) {
+        System.out.println("Search tasks with query: " + q);
+        List<Task> tasks = taskService.searchTasksByTitle(q);
+        return ResponseEntity.ok(tasks);
+    }
+
+    // GET /tasks - Получить все задачи
     @GetMapping
     public ResponseEntity<List<Task>> getAllTasks() {
-        System.out.println("GET /api/tasks requested");
+        System.out.println("GET /tasks requested");
         List<Task> tasks = taskService.getAllTasks();
         return ResponseEntity.ok(tasks);
     }
 
+    // GET /tasks/{id}
     @GetMapping("/{id}")
     public ResponseEntity<?> getTaskById(@PathVariable Long id) {
-        System.out.println("GET /api/tasks/" + id + " requested");
+        System.out.println("GET /tasks/" + id + " requested");
         try {
             Task task = taskService.getTaskById(id);
             return ResponseEntity.ok(task);
@@ -55,29 +71,29 @@ public class TaskController {
         }
     }
 
+    // POST /tasks
     @PostMapping
     public ResponseEntity<?> createTask(@RequestBody Task task) {
-        System.out.println("POST /api/tasks requested with: " + task.getTitle());
+        System.out.println("POST /tasks requested with: " + task.getTitle());
 
+        // Валидация
         if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
             Map<String, String> error = new HashMap<>();
             error.put("error", "Title is required");
             return ResponseEntity.badRequest().body(error);
         }
 
-        if (task.getStatus() == null) {
-            task.setStatus("todo");
-        }
-
         Task createdTask = taskService.createTask(task);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
     }
 
+    // PUT /tasks/{id}
     @PutMapping("/{id}")
     public ResponseEntity<?> updateTask(@PathVariable Long id, @RequestBody Task updatedTask) {
-        System.out.println("PUT /api/tasks/" + id + " requested");
+        System.out.println("PUT /tasks/" + id + " requested");
 
         try {
+            // Валидация
             if (updatedTask.getTitle() == null || updatedTask.getTitle().trim().isEmpty()) {
                 Map<String, String> error = new HashMap<>();
                 error.put("error", "Title is required");
@@ -93,9 +109,39 @@ public class TaskController {
         }
     }
 
+    // PATCH /tasks/{id} для обновления статуса
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> updateTaskStatus(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        System.out.println("PATCH /tasks/" + id + " requested");
+
+        try {
+            String newStatus = request.get("status");
+            if (newStatus == null) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Status field is required");
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            // Валидация статуса
+            if (!isValidStatus(newStatus)) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Invalid status. Use: todo, in_progress, done");
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            Task updatedTask = taskService.updateTaskStatus(id, newStatus);
+            return ResponseEntity.ok(updatedTask);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+    }
+
+    // DELETE /tasks/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTask(@PathVariable Long id) {
-        System.out.println("DELETE /api/tasks/" + id + " requested");
+        System.out.println("DELETE /tasks/" + id + " requested");
 
         try {
             taskService.deleteTask(id);
@@ -105,5 +151,27 @@ public class TaskController {
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         }
+    }
+
+    // GET /tasks/status/{status} - фильтр по статусу
+    @GetMapping("/status/{status}")
+    public ResponseEntity<?> getTasksByStatus(@PathVariable String status) {
+        System.out.println("GET /tasks/status/" + status + " requested");
+
+        if (!isValidStatus(status)) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Invalid status. Use: todo, in_progress, done");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        List<Task> tasks = taskService.getTasksByStatus(status);
+        return ResponseEntity.ok(tasks);
+    }
+
+    // Вспомогательные методы
+    private boolean isValidStatus(String status) {
+        return status.equals("todo") ||
+                status.equals("in_progress") ||
+                status.equals("done");
     }
 }
