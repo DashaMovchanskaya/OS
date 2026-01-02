@@ -3,6 +3,7 @@ package org.example.controller;
 import org.example.model.Task;
 import org.example.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,56 +12,54 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
+@RequestMapping("/api/tasks")
 public class TaskController {
 
     @Autowired
     private TaskService taskService;
 
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, Object>> health() {
-        Map<String, Object> health = new HashMap<>();
-        health.put("status", "UP");
-        health.put("service", "todo-api-gateway");
-        health.put("timestamp", LocalDateTime.now());
-        health.put("database", "SQLite");
-        health.put("tasksCount", taskService.getTotalTaskCount());
-        return ResponseEntity.ok(health);
-    }
-
-    @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> status() {
-        Map<String, Object> status = new HashMap<>();
-        status.put("service", "todo-api-gateway");
-        status.put("version", "1.0.0");
-        status.put("gateway", "enabled");
-        status.put("authentication", "API Key required");
-        status.put("rateLimiting", "enabled");
-        status.put("circuitBreaker", "enabled");
-        status.put("started", LocalDateTime.now());
-        return ResponseEntity.ok(status);
-    }
-
-    @GetMapping("/tasks")
+    @GetMapping
     public ResponseEntity<List<Task>> getAllTasks() {
         List<Task> tasks = taskService.getAllTasks();
-        return ResponseEntity.ok(tasks);
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(30, TimeUnit.SECONDS))
+                .header("X-Cache-Status", "HIT")
+                .body(tasks);
     }
 
-    @GetMapping("/tasks/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<?> getTaskById(@PathVariable Long id) {
         try {
             Task task = taskService.getTaskById(id);
-            return ResponseEntity.ok(task);
+
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(60, TimeUnit.SECONDS))
+                    .header("X-Cache-Status", "HIT")
+                    .header("X-Cache-Key", "task:" + id)
+                    .body(task);
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
-    @PostMapping("/tasks")
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalTasks", taskService.getTotalTaskCount());
+        stats.put("timestamp", LocalDateTime.now());
+        stats.put("cacheEnabled", true);
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.SECONDS))
+                .body(stats);
+    }
+
+    @PostMapping
     public ResponseEntity<?> createTask(@RequestBody Task task) {
         if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
             Map<String, String> error = new HashMap<>();
@@ -72,7 +71,7 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
     }
 
-    @PutMapping("/tasks/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<?> updateTask(@PathVariable Long id, @RequestBody Task updatedTask) {
         try {
             if (updatedTask.getTitle() == null || updatedTask.getTitle().trim().isEmpty()) {
@@ -90,7 +89,7 @@ public class TaskController {
         }
     }
 
-    @DeleteMapping("/tasks/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTask(@PathVariable Long id) {
         try {
             taskService.deleteTask(id);

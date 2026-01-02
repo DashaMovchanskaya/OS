@@ -8,11 +8,29 @@ spring:
   application:
     name: todo-api-gateway
 
+  cache:
+    type: redis
+    redis:
+      time-to-live: 60000
+      cache-null-values: false
+      use-key-prefix: true
+      key-prefix: "todo:"
+
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
   cloud:
     gateway:
       routes:
         - id: todo-api
-          uri: http://localhost:8081
+          uri: http://localhost:8080
           predicates:
             - Path=/api/tasks/**
           filters:
@@ -20,9 +38,9 @@ spring:
             - StripPrefix=1
 
         - id: public-endpoints
-          uri: http://localhost:8081
+          uri: http://localhost:8080
           predicates:
-            - Path=/health, /status
+            - Path=/health, /status, /public/**
 
   datasource:
     url: jdbc:h2:mem:todo_db
@@ -38,6 +56,17 @@ spring:
       hibernate:
         format_sql: true
 
+jackson:
+  serialization:
+    write-dates-as-timestamps: false
+    write-date-timestamps-as-nanoseconds: false
+  deserialization:
+    read-date-timestamps-as-nanoseconds: false
+  date-format: yyyy-MM-dd HH:mm:ss
+  time-zone: UTC
+
 logging:
   level:
-    org.example: INFO
+    org.example: DEBUG
+    org.springframework.cache: TRACE
+    org.springframework.data.redis: DEBUG
