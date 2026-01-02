@@ -17,7 +17,6 @@ public class TaskService {
     @Autowired
     private TaskRepository taskRepository;
 
-    // Получить все задачи (без описания)
     public List<Task> getAllTasks() {
         return taskRepository.findAll()
                 .stream()
@@ -25,17 +24,14 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
-    // Получить задачу по ID
     public Task getTaskById(Long id) {
         Optional<Task> task = taskRepository.findById(id);
         return task.orElseThrow(() ->
                 new RuntimeException("Задача не найдена с id: " + id));
     }
 
-    // Создать новую задачу
     @Transactional
     public Task createTask(Task task) {
-        // Устанавливаем статус по умолчанию, если не указан
         if (task.getStatus() == null) {
             task.setStatus("todo");
         }
@@ -43,7 +39,6 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    // Обновить задачу полностью
     @Transactional
     public Task updateTask(Long id, Task updatedTask) {
         Task existingTask = getTaskById(id);
@@ -55,7 +50,6 @@ public class TaskService {
         return taskRepository.save(existingTask);
     }
 
-    // Обновить только статус задачи
     @Transactional
     public Task updateTaskStatus(Long id, String newStatus) {
         Task existingTask = getTaskById(id);
@@ -63,7 +57,6 @@ public class TaskService {
         return taskRepository.save(existingTask);
     }
 
-    // Удалить задачу
     @Transactional
     public void deleteTask(Long id) {
         if (!taskRepository.existsById(id)) {
@@ -72,7 +65,6 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
-    // Дополнительные методы
     public List<Task> getTasksByStatus(String status) {
         return taskRepository.findAll()
                 .stream()
@@ -85,7 +77,6 @@ public class TaskService {
         return taskRepository.count();
     }
 
-    // Поиск по ключевым словам в заголовке
     public List<Task> searchTasksByTitle(String keyword) {
         return taskRepository.findAll()
                 .stream()
@@ -94,7 +85,6 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
-    // Инициализировать тестовые данные
     @PostConstruct
     @Transactional
     public void initializeSampleData() {

@@ -1,38 +1,43 @@
+server:
+  port: 8080
+
 spring:
+  main:
+    web-application-type: reactive
+
   application:
-    name: todo-api
+    name: todo-api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        - id: todo-api
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/tasks/**
+          filters:
+            - name: AuthenticationFilter
+            - StripPrefix=1
+
+        - id: public-endpoints
+          uri: http://localhost:8081
+          predicates:
+            - Path=/health, /status
 
   datasource:
-    url: jdbc:sqlite:todo.db
-    driver-class-name: org.sqlite.JDBC
-    username:
+    url: jdbc:h2:mem:todo_db
+    driver-class-name: org.h2.Driver
+    username: sa
     password:
 
   jpa:
-    database-platform: org.hibernate.community.dialect.SQLiteDialect
     hibernate:
-      ddl-auto: create-drop  # или update для сохранения данных
+      ddl-auto: create-drop
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.community.dialect.SQLiteDialect
-        connection:
-          autocommit: false
-
-  data:
-    jpa:
-      repositories:
-        enabled: true
-
-server:
-  port: 8080
-  servlet:
-    context-path: /api
 
 logging:
   level:
     org.example: INFO
-    org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
