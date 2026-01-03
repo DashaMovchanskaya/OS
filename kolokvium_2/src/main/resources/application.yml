@@ -1,60 +1,47 @@
 server:
   port: 8080
+  max-http-header-size: 16384
 
 spring:
-  main:
-    web-application-type: reactive
 
   application:
     name: todo-api-gateway
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    connection-timeout: 5000ms
+
+  redis:
+    host: localhost
+    port: 6379
 
   cache:
     type: redis
     redis:
       time-to-live: 60000
-      cache-null-values: false
-      use-key-prefix: true
-      key-prefix: "todo:"
-
-  redis:
-    host: localhost
-    port: 6379
-    timeout: 2000ms
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
 
   cloud:
     gateway:
-      routes:
-        - id: todo-api
-          uri: http://localhost:8080
-          predicates:
-            - Path=/api/tasks/**
-          filters:
-            - name: AuthenticationFilter
-            - StripPrefix=1
-
-        - id: public-endpoints
-          uri: http://localhost:8080
-          predicates:
-            - Path=/health, /status, /public/**
+      discovery:
+        locator:
+          enabled: false
 
   datasource:
-    url: jdbc:h2:mem:todo_db
-    driver-class-name: org.h2.Driver
-    username: sa
+    url: jdbc:sqlite:todo.db
+    driver-class-name: org.sqlite.JDBC
+    username:
     password:
 
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-    properties:
+    jpa:
       hibernate:
-        format_sql: true
+        ddl-auto: create-drop
+      show-sql: true
+      properties:
+        hibernate:
+          format_sql: true
 
 jackson:
   serialization:

@@ -23,7 +23,7 @@ public class TaskService {
 
     @Cacheable(value = "tasks", key = "'all'")
     public List<Task> getAllTasks() {
-        System.out.println("🔄 Загрузка всех задач из БД (кэш не найден)");
+        System.out.println("Загрузка всех задач из БД (кэш не найден)");
         return taskRepository.findAll()
                 .stream()
                 .map(Task::toShortVersion)
@@ -32,7 +32,7 @@ public class TaskService {
 
     @Cacheable(value = "task", key = "#id")
     public Task getTaskById(Long id) {
-        System.out.println("🔄 Загрузка задачи " + id + " из БД (кэш не найден)");
+        System.out.println("Загрузка задачи " + id + " из БД (кэш не найден)");
         return taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found: " + id));
     }
@@ -44,7 +44,7 @@ public class TaskService {
             }
     )
     public Task createTask(Task task) {
-        System.out.println("🗑️ Инвалидация кэша при создании задачи");
+        System.out.println("Инвалидация кэша при создании задачи");
         return taskRepository.save(task);
     }
 
@@ -56,7 +56,7 @@ public class TaskService {
             }
     )
     public Task updateTask(Long id, Task updatedTask) {
-        System.out.println("🔄 Обновление кэша задачи " + id);
+        System.out.println("Обновление кэша задачи " + id);
         Task existing = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found: " + id));
         existing.setTitle(updatedTask.getTitle());

@@ -1,13 +1,17 @@
 package org.example.controller;
 
+import org.example.dto.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/cache")
@@ -17,61 +21,94 @@ public class CacheController {
     private CacheManager cacheManager;
 
     @GetMapping("/info")
-    public ResponseEntity<Map<String, Object>> getCacheInfo() {
-        Map<String, Object> info = new HashMap<>();
+    public Mono<ResponseEntity<ApiResponse<Map<String, Object>>>> getCacheInfo() {
+        return Mono.fromCallable(() -> {
+            Map<String, Object> info = new HashMap<>();
 
-        cacheManager.getCacheNames().forEach(cacheName -> {
-            org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
-            if (cache != null) {
-                info.put(cacheName, "Redis cache");
-            }
+            cacheManager.getCacheNames().forEach(cacheName -> {
+                org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
+                if (cache != null) {
+                    info.put(cacheName, Map.of(
+                            "type", "Redis cache",
+                            "nativeCache", cache.getNativeCache().getClass().getSimpleName()
+                    ));
+                }
+            });
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("caches", info);
+            data.put("totalCaches", cacheManager.getCacheNames().size());
+            data.put("cacheManager", cacheManager.getClass().getSimpleName());
+
+            ApiResponse<Map<String, Object>> response = ApiResponse.success(data);
+
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(Duration.ofSeconds(30)))
+                    .header("X-Cache-Status", "HIT")
+                    .body(response);
         });
-
-        info.put("totalCaches", cacheManager.getCacheNames().size());
-        info.put("cacheManager", cacheManager.getClass().getSimpleName());
-
-        return ResponseEntity.ok(info);
     }
 
     @DeleteMapping("/{cacheName}")
-    public ResponseEntity<Map<String, String>> clearCache(@PathVariable String cacheName) {
-        org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
-        if (cache != null) {
-            cache.clear();
-            return ResponseEntity.ok(Map.of(
-                    "message", "Cache cleared successfully",
-                    "cacheName", cacheName
-            ));
-        }
+    public Mono<ResponseEntity<ApiResponse<Map<String, String>>>> clearCache(@PathVariable String cacheName) {
+        return Mono.fromCallable(() -> {
+            org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
 
-        return ResponseEntity.badRequest().body(Map.of(
-                "error", "Cache not found",
-                "cacheName", cacheName
-        ));
+            if (cache != null) {
+                cache.clear();
+
+                Map<String, String> result = Map.of(
+                        "message", "Cache cleared successfully",
+                        "cacheName", cacheName
+                );
+
+                ApiResponse<Map<String, String>> response = ApiResponse.success(result);
+                return ResponseEntity.ok(response);
+            }
+
+            ApiResponse<Map<String, String>> response = ApiResponse.error("Cache not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        });
     }
 
     @DeleteMapping("/clear-all")
-    public ResponseEntity<Map<String, String>> clearAllCaches() {
-        cacheManager.getCacheNames().forEach(cacheName -> {
-            org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
-            if (cache != null) {
-                cache.clear();
-            }
-        });
+    public Mono<ResponseEntity<ApiResponse<Map<String, String>>>> clearAllCaches() {
+        return Mono.fromCallable(() -> {
+            int clearedCount = 0;
 
-        return ResponseEntity.ok(Map.of(
-                "message", "All caches cleared successfully",
-                "clearedCount", String.valueOf(cacheManager.getCacheNames().size())
-        ));
+            for (String cacheName : cacheManager.getCacheNames()) {
+                org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
+                if (cache != null) {
+                    cache.clear();
+                    clearedCount++;
+                }
+            }
+
+            Map<String, String> result = Map.of(
+                    "message", "All caches cleared successfully",
+                    "clearedCount", String.valueOf(clearedCount),
+                    "totalCaches", String.valueOf(cacheManager.getCacheNames().size())
+            );
+
+            ApiResponse<Map<String, String>> response = ApiResponse.success(result);
+            return ResponseEntity.ok(response);
+        });
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> getCacheStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("cacheNames", cacheManager.getCacheNames());
-        stats.put("cacheCount", cacheManager.getCacheNames().size());
-        stats.put("cacheType", "Redis");
+    public Mono<ResponseEntity<ApiResponse<Map<String, Object>>>> getCacheStats() {
+        return Mono.fromCallable(() -> {
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("cacheNames", cacheManager.getCacheNames());
+            stats.put("cacheCount", cacheManager.getCacheNames().size());
+            stats.put("cacheType", "Redis");
+            stats.put("timestamp", System.currentTimeMillis());
 
-        return ResponseEntity.ok(stats);
+            ApiResponse<Map<String, Object>> response = ApiResponse.success(stats);
+
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(Duration.ofSeconds(10)))
+                    .body(response);
+        });
     }
 }

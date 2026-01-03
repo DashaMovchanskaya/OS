@@ -30,7 +30,6 @@ public class GatewayConfig {
         };
     }
 
-    // Rate Limiting по IP адресу
     @Bean
     public KeyResolver ipKeyResolver() {
         return exchange -> Mono.just(
@@ -40,7 +39,6 @@ public class GatewayConfig {
         );
     }
 
-    // Rate Limiting по пользователю (комбинация API Key + IP)
     @Bean
     public KeyResolver userKeyResolver() {
         return exchange -> {
