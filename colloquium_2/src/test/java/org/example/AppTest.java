@@ -1,38 +1,40 @@
 package org.example;
+import org.example.model.Task;
+import org.example.repository.TaskRepository;
+import org.example.service.TaskService;
+import org.example.service.MessageQueueService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import java.util.Optional;
 
-/**
- * Unit test for simple App.
- */
-public class AppTest 
-    extends TestCase
-{
-    /**
-     * Create the test case
-     *
-     * @param testName name of the test case
-     */
-    public AppTest( String testName )
-    {
-        super( testName );
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class TaskServiceTest {
+
+    private TaskRepository taskRepository;
+    private TaskService taskService;
+
+    @BeforeEach
+    void setUp() {
+        taskRepository = mock(TaskRepository.class);
+        taskService = new TaskService(taskRepository, new MessageQueueService(), new SimpleMeterRegistry());
     }
 
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite()
-    {
-        return new TestSuite( AppTest.class );
-    }
+    @Test
+    void testGetTaskById() {
+        Task task = new Task("Test", "Desc", "todo");
+        task.setId(1L);
 
-    /**
-     * Rigourous Test :-)
-     */
-    public void testApp()
-    {
-        assertTrue( true );
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+
+        Task result = taskService.getTaskById(1L);
+
+        assertEquals(1L, result.getId());
+        verify(taskRepository).findById(1L);
     }
 }
+
+
