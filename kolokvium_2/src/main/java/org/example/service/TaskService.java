@@ -10,6 +10,8 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,17 +19,27 @@ import java.util.stream.Collectors;
 @Service
 @CacheConfig(cacheNames = {"tasks", "task", "stats"})
 public class TaskService {
+    private final TaskRepository taskRepository;
+    private final MessageQueueService messageQueueService;
+    private final Counter createCounter;
+    private final Counter updateCounter;
+    private final Counter deleteCounter;
 
     @Autowired
-    private TaskRepository taskRepository;
+    public TaskService(TaskRepository taskRepository,
+                       MessageQueueService messageQueueService,
+                       MeterRegistry meterRegistry) {
+        this.taskRepository = taskRepository;
+        this.messageQueueService = messageQueueService;
+        this.createCounter = Counter.builder("tasks.created").tag("type", "crud").register(meterRegistry);
+        this.updateCounter = Counter.builder("tasks.updated").tag("type", "crud").register(meterRegistry);
+        this.deleteCounter = Counter.builder("tasks.deleted").tag("type", "crud").register(meterRegistry);
+    }
 
     @Cacheable(value = "tasks", key = "'all'")
     public List<Task> getAllTasks() {
         System.out.println("Загрузка всех задач из БД (кэш не найден)");
-        return taskRepository.findAll()
-                .stream()
-                .map(Task::toShortVersion)
-                .collect(Collectors.toList());
+        return taskRepository.findAll();
     }
 
     @Cacheable(value = "task", key = "#id")
@@ -37,15 +49,18 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Task not found: " + id));
     }
 
-    @Caching(
-            evict = {
-                    @CacheEvict(value = "tasks", key = "'all'"),
-                    @CacheEvict(value = "stats", allEntries = true)
-            }
-    )
+    @Caching(evict = {
+            @CacheEvict(value = "tasks", key = "'all'"),
+            @CacheEvict(value = "stats", allEntries = true)
+    })
     public Task createTask(Task task) {
         System.out.println("Инвалидация кэша при создании задачи");
-        return taskRepository.save(task);
+        createCounter.increment();
+        Task saved = taskRepository.save(task);
+
+        messageQueueService.sendTaskCreatedEvent(saved, "system");
+
+        return saved;
     }
 
     @Caching(
@@ -59,22 +74,36 @@ public class TaskService {
         System.out.println("Обновление кэша задачи " + id);
         Task existing = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found: " + id));
+
+        Task oldTask = new Task(existing.getTitle(), existing.getDescription(), existing.getStatus());
+        oldTask.setId(existing.getId());
+
         existing.setTitle(updatedTask.getTitle());
         existing.setDescription(updatedTask.getDescription());
         existing.setStatus(updatedTask.getStatus());
-        return taskRepository.save(existing);
+
+        updateCounter.increment();
+        Task saved = taskRepository.save(existing);
+
+        messageQueueService.sendTaskUpdatedEvent(oldTask, saved, "system");
+
+        return saved;
     }
 
-    @Caching(
-            evict = {
-                    @CacheEvict(value = "task", key = "#id"),
-                    @CacheEvict(value = "tasks", key = "'all'"),
-                    @CacheEvict(value = "stats", allEntries = true)
-            }
-    )
+    @Caching(evict = {
+            @CacheEvict(value = "task", key = "#id"),
+            @CacheEvict(value = "tasks", key = "'all'"),
+            @CacheEvict(value = "stats", allEntries = true)
+    })
     public void deleteTask(Long id) {
-        System.out.println("🗑️ Инвалидация кэша при удалении задачи " + id);
+        System.out.println("Инвалидация кэша при удалении задачи");
+        Task existing = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found: " + id));
+
+        deleteCounter.increment();
         taskRepository.deleteById(id);
+
+        messageQueueService.sendTaskDeletedEvent(existing.getId(), existing.getTitle(), existing.getStatus(), "system");
     }
 
     @Cacheable(value = "stats", key = "'taskCount'")

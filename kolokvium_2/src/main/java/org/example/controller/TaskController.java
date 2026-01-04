@@ -105,6 +105,47 @@ public class TaskController {
         });
     }
 
+    @PatchMapping("/{id}")
+    public Mono<ResponseEntity<ApiResponse<Task>>> patchTask(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> updates) {
+        return Mono.fromCallable(() -> {
+            try {
+                Task existing = taskService.getTaskById(id);
+
+                if (updates.containsKey("title")) {
+                    String title = (String) updates.get("title");
+                    if (title == null || title.trim().isEmpty()) {
+                        ApiResponse<Task> response = ApiResponse.error("Title is required");
+                        return ResponseEntity.badRequest().body(response);
+                    }
+                    existing.setTitle(title);
+                }
+
+                if (updates.containsKey("description")) {
+                    existing.setDescription((String) updates.get("description"));
+                }
+
+                if (updates.containsKey("status")) {
+                    String status = (String) updates.get("status");
+                    if (!List.of("todo", "in_progress", "done").contains(status)) {
+                        ApiResponse<Task> response = ApiResponse.error("Invalid status value");
+                        return ResponseEntity.badRequest().body(response);
+                    }
+                    existing.setStatus(status);
+                }
+
+                Task updated = taskService.updateTask(id, existing);
+                ApiResponse<Task> response = ApiResponse.success(updated, "Task patched successfully");
+                return ResponseEntity.ok(response);
+
+            } catch (RuntimeException e) {
+                ApiResponse<Task> response = ApiResponse.error("Task not found", e.getMessage());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        });
+    }
+
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteTask(@PathVariable Long id) {
         return Mono.fromCallable(() -> {

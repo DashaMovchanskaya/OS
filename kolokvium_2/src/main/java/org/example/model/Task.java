@@ -110,14 +110,6 @@ public class Task implements Serializable {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public Task toShortVersion() {
-        Task shortTask = new Task(this.title, null, this.status);
-        shortTask.setId(this.id);
-        shortTask.setCreatedAt(this.createdAt);
-        shortTask.setUpdatedAt(this.updatedAt);
-        return shortTask;
-    }
-
     @Override
     public String toString() {
         return String.format("Task{id=%d, title='%s', status='%s'}",

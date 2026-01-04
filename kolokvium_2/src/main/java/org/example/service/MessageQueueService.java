@@ -3,6 +3,8 @@ package org.example.service;
 import org.example.config.RabbitMQConfig;
 import org.example.messaging.dto.TaskEvent;
 import org.example.model.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class MessageQueueService {
+
+    private static final Logger logger = LoggerFactory.getLogger(MessageQueueService.class);
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
@@ -29,12 +33,11 @@ public class MessageQueueService {
                     event
             );
 
-            System.out.println("Отправлено событие: Задача создана - " + task.getId());
-
+            logger.info("Отправлено событие: Задача создана - {}", task.getId());
             sendNotification("Новая задача создана: " + task.getTitle());
 
         } catch (AmqpException e) {
-            System.err.println("Ошибка отправки события создания задачи: " + e.getMessage());
+            logger.error("Ошибка отправки события создания задачи: {}", e.getMessage(), e);
         }
     }
 
@@ -54,7 +57,7 @@ public class MessageQueueService {
                     event
             );
 
-            System.out.println("Отправлено событие: Задача обновлена - " + newTask.getId());
+            logger.info("Отправлено событие: Задача обновлена - {}", newTask.getId());
 
             if (!oldTask.getStatus().equals(newTask.getStatus())) {
                 sendNotification(
@@ -64,7 +67,7 @@ public class MessageQueueService {
             }
 
         } catch (AmqpException e) {
-            System.err.println("Ошибка отправки события обновления задачи: " + e.getMessage());
+            logger.error("Ошибка отправки события обновления задачи: {}", e.getMessage(), e);
         }
     }
 
@@ -83,12 +86,11 @@ public class MessageQueueService {
                     event
             );
 
-            System.out.println("Отправлено событие: Задача удалена - " + taskId);
-
+            logger.info("Отправлено событие: Задача удалена - {}", taskId);
             sendNotification("Задача удалена: " + title);
 
         } catch (AmqpException e) {
-            System.err.println("Ошибка отправки события удаления задачи: " + e.getMessage());
+            logger.error("Ошибка отправки события удаления задачи: {}", e.getMessage(), e);
         }
     }
 
@@ -100,10 +102,10 @@ public class MessageQueueService {
                     message
             );
 
-            System.out.println("Отправлено уведомление: " + message);
+            logger.info("Отправлено уведомление: {}", message);
 
         } catch (AmqpException e) {
-            System.err.println("Ошибка отправки уведомления: " + e.getMessage());
+            logger.error("Ошибка отправки уведомления: {}", e.getMessage(), e);
         }
     }
 
